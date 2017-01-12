@@ -1,0 +1,23 @@
+{
+  "name": "webi18n",
+  "version": "1.0.0",
+  "description": "internationalization and localization library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martianyi/webi18n.git"
+  },
+  "keywords": [
+    "i18n",
+    "l10n"
+  ],
+  "author": "Fabien Cazenave, Yi Kai",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/martianyi/webi18n/issues"
+  },
+  "homepage": "https://github.com/martianyi/webi18n#readme"
+}

@@ -31,14 +31,19 @@
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define([], factory);
-    } else if (typeof module === 'object' && module.exports) {
+    }
+    else if (typeof module === 'object' && module.exports) {
         // Node. Does not work with strict CommonJS, but
         // only CommonJS-like environments that support module.exports,
         // like Node.
         module.exports = factory();
-    } else {
+    }
+    else if (typeof exports === 'object') {
+        exports['webi18n'] = exports['webL10n'] = factory();
+    }
+    else {
         // Browser globals (root is window)
-        root.webi18n = factory();
+        root['webi18n'] = root['webL10n'] = factory();
     }
 }(this, function () {
     'use strict';
@@ -70,14 +75,17 @@
         function getL10nResourceLinks() {
             return document.querySelectorAll('link[type="application/l10n"]');
         }
+
         function getL10nDictionary() {
             var script = document.querySelector('script[type="application/l10n"]');
             // TODO: support multiple and external JSON dictionaries
             return script ? JSON.parse(script.innerHTML) : null;
         }
+
         function getTranslatableChildren(element) {
             return element ? element.querySelectorAll('*[data-l10n-id]') : [];
         }
+
         function getL10nAttributes(element) {
             if (!element)
                 return {};
@@ -93,18 +101,20 @@
             }
             return {id: l10nId, args: args};
         }
+
         function fireL10nReadyEvent(lang) {
             var evtObject = document.createEvent('Event');
             evtObject.initEvent('localized', true, false);
             evtObject.language = lang;
             document.dispatchEvent(evtObject);
         }
+
         function xhrLoadText(url, onSuccess, onFailure) {
             onSuccess = onSuccess || function _onSuccess(data) {
-                };
+            };
             onFailure = onFailure || function _onFailure() {
-                    console.warn(url + ' not found.');
-                };
+                console.warn(url + ' not found.');
+            };
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, gAsyncResourceLoading);
             if (xhr.overrideMimeType) {
@@ -129,6 +139,7 @@
                 onFailure();
             }
         }
+
         /**
          * l10n resource parser:
          *  - reads (async XHR) the l10n resource matching `lang';
@@ -153,6 +164,7 @@
          */
         function parseResource(href, lang, successCallback, failureCallback) {
             var baseURL = href.replace(/[^\/]*$/, '') || './';
+
             // handle escaped characters (backslashes) in a string
             function evalString(text) {
                 if (text.lastIndexOf('\\') < 0)
@@ -168,6 +180,7 @@
                     .replace(/\\"/g, '"')
                     .replace(/\\'/g, "'");
             }
+
             // parse *.properties text data into an l10n dictionary
             // If gAsyncResourceLoading is false, then the callback will be called
             // synchronously. Otherwise it is called asynchronously.
@@ -186,6 +199,7 @@
                     var genericLang = lang.split('-', 1)[0];
                     var skipLang = false;
                     var match = '';
+
                     function nextEntry() {
                         // Use infinite loop instead of recursion to avoid reaching the
                         // maximum recursion limit for content with many lines.
@@ -224,19 +238,23 @@
                             }
                         }
                     }
+
                     nextEntry();
                 }
+
                 // import another *.properties file
                 function loadImport(url, callback) {
                     xhrLoadText(url, function (content) {
                         parseRawLines(content, false, callback); // don't allow recursive imports
                     }, null);
                 }
+
                 // fill the dictionary
                 parseRawLines(text, true, function () {
                     parsedPropertiesCallback(dictionary);
                 });
             }
+
             // load and parse l10n data (warning: global variables are used here)
             xhrLoadText(href, function (response) {
                 gTextData += response; // mostly for debug
@@ -264,6 +282,7 @@
                 });
             }, failureCallback);
         }
+
         // load and parse all resources for the specified locale
         function loadLocale(lang, callback) {
             // RFC 4646, section 2.1 states that language tags have to be treated as
@@ -272,7 +291,7 @@
                 lang = lang.toLowerCase();
             }
             callback = callback || function _callback() {
-                };
+            };
             clear();
             gLanguage = lang;
             // check all <link type="application/l10n" href="..." /> nodes
@@ -317,6 +336,7 @@
                     gReadyState = 'complete';
                 }
             };
+
             // load all resource files
             function L10nResourceLink(link) {
                 var href = link.href;
@@ -333,11 +353,13 @@
                     });
                 };
             }
+
             for (var i = 0; i < langCount; i++) {
                 var resource = new L10nResourceLink(langLinks[i]);
                 resource.load(lang, onResourceLoaded);
             }
         }
+
         // clear all l10n data
         function clear() {
             gL10nData = {};
@@ -346,6 +368,7 @@
             // TODO: clear all non predefined macros.
             // There's no such macro /yet/ but we're planning to have some...
         }
+
         /**
          * Get rules for plural forms (shared with JetPack), see:
          * http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
@@ -534,13 +557,16 @@
                 'zh': 0,
                 'zu': 3
             };
+
             // utility functions for plural rules methods
             function isIn(n, list) {
                 return list.indexOf(n) !== -1;
             }
+
             function isBetween(n, start, end) {
                 return start <= n && n <= end;
             }
+
             // list of all plural rules methods:
             // map an integer to the plural form name to use
             var pluralRules = {
@@ -754,6 +780,7 @@
             }
             return pluralRules[index];
         }
+
         // pre-defined 'plural' macro
         gMacros.plural = function (str, param, key, prop) {
             var n = parseFloat(param);
@@ -781,6 +808,7 @@
             }
             return str;
         };
+
         /**
          * l10n dictionary functions
          */
@@ -808,6 +836,7 @@
             }
             return rv;
         }
+
         // replace {[macros]} with their values
         function substIndexes(str, args, key, prop) {
             var reIndex = /\{\[\s*([a-zA-Z]+)\(([a-zA-Z]+)\)\s*\]\}/;
@@ -831,6 +860,7 @@
             }
             return str;
         }
+
         // replace {{arguments}} with their values
         function substArguments(str, args, key) {
             var reArgs = /\{\{\s*(.+?)\s*\}\}/g;
@@ -845,6 +875,7 @@
                 return matched_text;
             });
         }
+
         // translate an HTML element
         function translateElement(element) {
             var l10n = getL10nAttributes(element);
@@ -888,6 +919,7 @@
                 element[k] = data[k];
             }
         }
+
         // webkit browsers don't currently support 'children' on SVG elements...
         function getChildElementCount(element) {
             if (element.children) {
@@ -902,6 +934,7 @@
             }
             return count;
         }
+
         // translate an HTML subtree
         function translateFragment(element) {
             element = element || document.documentElement;
@@ -914,6 +947,7 @@
             // translate element itself if necessary
             translateElement(element);
         }
+
         // cross-browser API
         return {
             // get a localized string
